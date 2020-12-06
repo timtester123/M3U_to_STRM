@@ -11,9 +11,28 @@ Module Module1
             Dim counter_Serien As Integer = 0
             Dim counter_TV As Integer = 0
 
+            Dim Main_folder As String = System.AppDomain.CurrentDomain.BaseDirectory
+            Dim conf_file As String = Main_folder + "\M3U_to_STRM.conf"
+            Dim local_m3u As String = Main_folder + "\M3U.m3u"
+
+            Console.WriteLine("Reading config")
+            If My.Computer.FileSystem.FileExists(conf_file) = False Then
+                Console.ForegroundColor = ConsoleColor.Red
+                Console.WriteLine("Config file missing!")
+                Console.WriteLine("Please create the config file: " + conf_file)
+                Console.WriteLine("And paste the M3U download URL in the config file")
+                Console.ForegroundColor = ConsoleColor.White
+            Else
+                Console.WriteLine("Downloading M3U")
+                Dim M3U_URL As String = My.Computer.FileSystem.ReadAllText(conf_file)
+                My.Computer.FileSystem.DeleteFile(local_m3u)
+                My.Computer.Network.DownloadFile(M3U_URL, local_m3u)
+                Console.WriteLine("Download complete")
+            End If
+
+
 
             'Datei lesen
-            Dim Main_folder As String = System.AppDomain.CurrentDomain.BaseDirectory
             Dim folder_Filme As String = Main_folder + "\Filme"
             Dim folder_Serien As String = Main_folder + "\Serien"
             Dim folder_TV As String = Main_folder + "\TV"
@@ -80,6 +99,7 @@ Module Module1
                                 'Serien zusammenfassen
                                 folder = folder_Serien & "\" & NAME
                                 folder = Regex.Replace(folder, "s(\d+) e(\d+)", "", RegexOptions.IgnoreCase).Trim
+                                folder = Regex.Replace(folder, "s(\d+)e(\d+)", "", RegexOptions.IgnoreCase).Trim
                                 Console.WriteLine("series: " + NAME + " found")
                                 counter_Serien = counter_Serien + 1
                             End If
@@ -144,7 +164,7 @@ Module Module1
     Public Function RemoveIllegalFileNameChars(input As String, Optional replacement As String = "") As String
         Dim regexSearch = New String(Path.GetInvalidFileNameChars()) & New String(Path.GetInvalidPathChars())
         Dim r = New Regex(String.Format("[{0}]", Regex.Escape(regexSearch)))
-        Return r.Replace(input, replacement).Replace(".", "")
+        Return r.Replace(input, replacement).Replace(".", "").Replace("[", "").Replace("]", "")
     End Function
 
 End Module
