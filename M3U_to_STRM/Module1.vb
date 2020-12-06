@@ -25,7 +25,9 @@ Module Module1
             Else
                 Console.WriteLine("Downloading M3U")
                 Dim M3U_URL As String = My.Computer.FileSystem.ReadAllText(conf_file)
-                My.Computer.FileSystem.DeleteFile(local_m3u)
+                If My.Computer.FileSystem.FileExists(local_m3u) Then
+                    My.Computer.FileSystem.DeleteFile(local_m3u)
+                End If
                 My.Computer.Network.DownloadFile(M3U_URL, local_m3u)
                 Console.WriteLine("Download complete")
             End If
