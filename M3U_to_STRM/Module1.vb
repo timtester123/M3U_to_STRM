@@ -1,4 +1,5 @@
 ﻿Imports System.IO
+Imports System.Net
 Imports System.Text.RegularExpressions
 
 Module Module1
@@ -28,7 +29,15 @@ Module Module1
                 If My.Computer.FileSystem.FileExists(local_m3u) Then
                     My.Computer.FileSystem.DeleteFile(local_m3u)
                 End If
-                My.Computer.Network.DownloadFile(M3U_URL, local_m3u)
+
+                'My.Computer.Network.DownloadFile(M3U_URL, local_m3u)
+
+                Dim downloader_M3U As WebClient
+                downloader_M3U = New WebClient
+                downloader_M3U.Headers.Add("user-agent", "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.2; .NET CLR 1.0.3705;)")
+                downloader_M3U.DownloadFile(New Uri(M3U_URL), local_m3u)
+
+
                 Console.WriteLine("Download complete")
             End If
 
