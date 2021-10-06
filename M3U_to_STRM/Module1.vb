@@ -133,7 +133,7 @@ Module Module1
                         End If
                         '.strm Datei erstellen
                         If My.Computer.FileSystem.FileExists(folder & "\" & NAME & ".strm") = False Then
-                            My.Computer.FileSystem.WriteAllText(folder & "\" & NAME & ".strm", URL, False, Text.Encoding.UTF8)
+                            My.Computer.FileSystem.WriteAllText(folder & "\" & NAME & ".strm", URL, False, Text.Encoding.ASCII)
                         End If
 
                     Else
