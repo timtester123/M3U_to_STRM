@@ -173,7 +173,7 @@ Module Module1
     End Sub
 
     Public Function RemoveIllegalFileNameChars(input As String, Optional replacement As String = "") As String
-        input = Left(input, 50)
+        input = Left(input, 85)
         input = input.Replace("\", "")
         Dim regexSearch = New String(Path.GetInvalidFileNameChars()) & New String(Path.GetInvalidPathChars())
         Dim r = New Regex(String.Format("[{0}]", Regex.Escape(regexSearch)))
