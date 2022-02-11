@@ -6,11 +6,12 @@ Module Module1
 
     Sub Main()
         Try
-            Console.WriteLine("© by TimTester visit https://TimTester.in")
+            Console.WriteLine("© by TimTester visit https://IPTV-Oscam-Shop.com")
 
             Dim counter_Filme As Integer = 0
             Dim counter_Serien As Integer = 0
             Dim counter_TV As Integer = 0
+            Dim counter_errors As Integer = 0
 
             Dim Main_folder As String = System.AppDomain.CurrentDomain.BaseDirectory
             Dim conf_file As String = Main_folder + "\M3U_to_STRM.conf"
@@ -53,6 +54,7 @@ Module Module1
             Console.WriteLine("Please enter Y or N.!")
             Dim del As String = Reader.ReadLine(20000)
             If del.ToLower = "y" Then
+                Console.WriteLine("Deleting files and folders, this may takes a while!")
                 If My.Computer.FileSystem.DirectoryExists(folder_Filme) Then
                     My.Computer.FileSystem.DeleteDirectory(folder_Filme, FileIO.DeleteDirectoryOption.DeleteAllContents)
                 End If
@@ -81,60 +83,73 @@ Module Module1
                     If line1.ToLower.StartsWith("#extinf:") Then
 
                         Dim line2 As String = FileText_lines(index + 1)
-
+                        Dim folder As String = ""
                         Dim NAME As String = ""
                         Dim URL As String = ""
+                        Try
+                            Dim Start_Name As Integer = line1.IndexOf("tvg-name=") + 10
+                            Dim Start_Logo As Integer = line1.IndexOf("tvg-logo=") + 10
+                            'Name
+                            NAME = line1.Substring(Start_Name, Start_Logo - Start_Name - 12).Replace("&", "")
+                            'URL
+                            URL = line2.Replace(vbCrLf, "").Replace(vbCr, "")
+                            URL = URL
 
-                        Dim Start_Name As Integer = line1.IndexOf("tvg-name=") + 10
-                        Dim Start_Logo As Integer = line1.IndexOf("tvg-logo=") + 10
-                        'Name
-                        NAME = line1.Substring(Start_Name, Start_Logo - Start_Name - 12).Replace("&", "")
-                        'URL
-                        URL = line2.Replace(vbCrLf, "").Replace(vbCr, "")
-                        URL = URL
+                            'Illegale Charakter entfernen
+                            NAME = RemoveIllegalFileNameChars(NAME).Trim()
 
-                        'Illegale Charakter entfernen
-                        NAME = RemoveIllegalFileNameChars(NAME).Trim()
+                            'Gruppe aus URL extrahieren
+                            Dim GROUP As String = ""
+                            If URL.ToLower.Contains("/serie") Then
+                                GROUP = "serien"
+                            End If
+                            If URL.ToLower.Contains("/movie") Then
+                                GROUP = "filme"
+                            End If
+                            'Prüfen ob Serie oder Film
+                            If GROUP.ToLower.Contains("serien") Then
+                                'Serien zusammenfassen
+                                folder = folder_Serien & "\" & NAME
+                                folder = Regex.Replace(folder, "s(\d+) e(\d+)", "", RegexOptions.IgnoreCase).Trim
+                                folder = Regex.Replace(folder, "s(\d+)e(\d+)", "", RegexOptions.IgnoreCase).Trim
+                                Console.WriteLine("series: " + NAME + " found")
+                                counter_Serien = counter_Serien + 1
+                            End If
+                            If GROUP.ToLower.Contains("filme") Then
+                                folder = folder_Filme & "\" & NAME
+                                Console.WriteLine("movie: " + NAME + " found")
+                                counter_Filme = counter_Filme + 1
+                            End If
+                            If folder = "" Then
+                                folder = folder_TV & "\" & counter_TV & " " & NAME
+                                NAME = counter_TV & " " & NAME
+                                Console.WriteLine("TV program: " & NAME & " found")
+                                counter_TV = counter_TV + 1
+                            End If
 
-                        'Gruppe aus URL extrahieren
-                        Dim GROUP As String = ""
-                        If URL.ToLower.Contains("/serie") Then
-                            GROUP = "serien"
-                        End If
-                        If URL.ToLower.Contains("/movie") Then
-                            GROUP = "filme"
-                        End If
-                        'Prüfen ob Serie oder Film
-                        Dim folder As String = ""
-                        If GROUP.ToLower.Contains("serien") Then
-                            'Serien zusammenfassen
-                            folder = folder_Serien & "\" & NAME
-                            folder = Regex.Replace(folder, "s(\d+) e(\d+)", "", RegexOptions.IgnoreCase).Trim
-                            folder = Regex.Replace(folder, "s(\d+)e(\d+)", "", RegexOptions.IgnoreCase).Trim
-                            Console.WriteLine("series: " + NAME + " found")
-                            counter_Serien = counter_Serien + 1
-                        End If
-                        If GROUP.ToLower.Contains("filme") Or GROUP.ToLower.Contains("ultra hd") Then
-                            folder = folder_Filme & "\" & NAME
-                            Console.WriteLine("movie: " + NAME + " found")
-                            counter_Filme = counter_Filme + 1
-                        End If
-                        If folder = "" Then
-                            folder = folder_TV & "\" & counter_TV & " " & NAME
-                            NAME = counter_TV & " " & NAME
-                            Console.WriteLine("TV program: " & NAME & " found")
-                            counter_TV = counter_TV + 1
-                        End If
-
-                        folder = folder.Trim()
+                            folder = folder.Trim()
+                        Catch ex As Exception
+                            errHandler(ex, "Failed to parse line: " + line2)
+                            Continue For
+                        End Try
                         'Ordner erstellen
-                        If My.Computer.FileSystem.DirectoryExists(folder) = False Then
-                            My.Computer.FileSystem.CreateDirectory(folder)
-                        End If
+                        Try
+                            If My.Computer.FileSystem.DirectoryExists(folder) = False Then
+                                My.Computer.FileSystem.CreateDirectory(folder)
+                            End If
+                        Catch ex As Exception
+                            errHandler(ex, "Failed to create folder: " + folder)
+                            Continue For
+                        End Try
                         '.strm Datei erstellen
-                        If My.Computer.FileSystem.FileExists(folder & "\" & NAME & ".strm") = False Then
-                            My.Computer.FileSystem.WriteAllText(folder & "\" & NAME & ".strm", URL, False, Text.Encoding.ASCII)
-                        End If
+                        Try
+                            If My.Computer.FileSystem.FileExists(folder & "\" & NAME & ".strm") = False Then
+                                My.Computer.FileSystem.WriteAllText(folder & "\" & NAME & ".strm", URL, False, Text.Encoding.ASCII)
+                            End If
+                        Catch ex As Exception
+                            errHandler(ex, "Failed to create .strm file: " + folder)
+                            Continue For
+                        End Try
 
                     Else
                         Continue For
@@ -146,6 +161,7 @@ Module Module1
                 Console.WriteLine(counter_Filme & " movies found")
                 Console.WriteLine(counter_Serien & " series found")
                 Console.WriteLine(counter_TV & " TV programs found")
+                Console.WriteLine(counter_errors & " errors")
                 Console.WriteLine("")
                 Console.WriteLine("")
 
@@ -155,7 +171,7 @@ Module Module1
             'Next
 
 
-            Console.WriteLine("© by TimTester visit https://TimTester.in")
+            Console.WriteLine("© by TimTester visit https://IPTV-Oscam-Shop.com")
 
             Console.WriteLine("The program will automatically close in 20 seconds")
             Reader.ReadLine(20000)
@@ -179,5 +195,17 @@ Module Module1
         Dim r = New Regex(String.Format("[{0}]", Regex.Escape(regexSearch)))
         Return r.Replace(input, replacement).Replace(".", "").Replace("[", "").Replace("]", "")
     End Function
+
+
+
+
+    Private Sub errHandler(ByVal ex As Exception, ByVal msg As String)
+        Console.ForegroundColor = ConsoleColor.Red
+        Console.WriteLine(msg)
+        Console.WriteLine(ex.Message)
+        Console.WriteLine(ex.StackTrace)
+        Console.WriteLine(ex.Source)
+        Console.ForegroundColor = ConsoleColor.White
+    End Sub
 
 End Module
